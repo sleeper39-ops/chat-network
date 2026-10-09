@@ -1,13 +1,14 @@
 """
 Chat Network — ระบบแชทองค์กร & ออนไลน์ 24 ชม. (Flask Single File)
-- ธีมสีฟ้า (Sky & Ocean Blue)
-- เปลี่ยนรูปโปรไฟล์ส่วนตัวได้ (อัปโหลดรูป / อีโมจิ)
-- เปลี่ยนรูปประจำห้องแชทได้ (อัปโหลดรูป / ไอคอน)
-- ส่งรูปภาพ ถ่ายภาพ และกด Ctrl+V วางภาพได้ทันที
-- ส่งพิกัดตำแหน่ง GPS พร้อมปุ่มเปิดดูบน Google Maps
+- ธีมสีฟ้าสดใส (Sky & Ocean Blue)
+- เปลี่ยนรูปโปรไฟล์ส่วนตัวได้ (อัปโหลดรูปภาพจากคอมพิวเตอร์ / มือถือ หรือเลือกไอคอนอีโมจิ)
+- เปลี่ยนรูปประจำห้องแชทได้ (อัปโหลดรูปถ่ายห้อง / เลือกไอคอน)
+- ส่งรูปภาพ ถ่ายภาพจากมือถือ และกด Ctrl+V วางภาพได้ทันที
+- ส่งไฟล์เอกสารทุกชนิด (PDF, Word, Excel, ZIP, MP3, MP4, Text ฯลฯ) พร้อมการ์ดดาวน์โหลด
+- ส่งพิกัดตำแหน่ง GPS พร้อมปุ่มเปิดดูบน Google Maps ทันที
 - สิทธิ์ 👑 Admin สำหรับผู้สร้างห้อง (Mute ปิดเสียง 1, 2, 5 นาที / Kick เตะออกจากห้อง)
 - รองรับห้องแบบมีรหัสผ่าน และห้องสาธารณะ
-- มี QR Code ให้มือถือสแกนเข้าแชทได้ทันที
+- มี QR Code ให้มือถือสแกนเข้าใช้งานได้ทันที
 """
 
 import base64
@@ -23,6 +24,7 @@ from flask import (Flask, request, session, redirect, url_for, jsonify,
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "chat-network-blue-ocean-key-2026")
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # รองรับไฟล์ขนาดสูงสุด 32 MB
 DB_PATH = os.environ.get("CHAT_DB", "chat.db")
 
 MAX_NAME = 30
@@ -261,25 +263,31 @@ BASE = r"""<!doctype html>
 
 <!-- Profile Avatar Change Modal -->
 <div id="avatarModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-  <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl pop border border-sky-100 text-center relative">
-    <button onclick="closeAvatarModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">&times;</button>
-    <h3 class="text-lg font-bold text-slate-800 mb-1">เลือกรูปโปรไฟล์ของคุณ</h3>
-    <p class="text-xs text-slate-500 mb-4">อัปโหลดรูปภาพจากเครื่อง หรือเลือกรูปอีโมจิ</p>
+  <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl pop border border-sky-100 text-center relative">
+    <button onclick="closeAvatarModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition text-lg">&times;</button>
+    
+    <div class="mx-auto mb-3 h-16 w-16 rounded-full bg-sky-100 border-2 border-sky-300 flex items-center justify-center shadow-inner overflow-hidden" id="modalAvatarPreview">
+      <span class="text-2xl font-bold text-sky-700">🧑‍💼</span>
+    </div>
 
-    <div class="flex flex-col items-center gap-3 mb-5">
+    <h3 class="text-lg font-bold text-slate-800 mb-1">เปลี่ยนรูปโปรไฟล์ของคุณ</h3>
+    <p class="text-xs text-slate-500 mb-5">เลือกรูปถ่ายจากเครื่องคอมพิวเตอร์ / มือถือ หรือเลือกไอคอนอีโมจิ</p>
+
+    <!-- Upload from device button -->
+    <div class="mb-5">
       <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="uploadProfileAvatar(event)">
       <button type="button" onclick="document.getElementById('avatarFileInput').click()"
-        class="px-4 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs border border-sky-200 transition flex items-center gap-1.5">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        <span>อัปโหลดรูปจากอุปกรณ์</span>
+        class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs shadow-md shadow-sky-500/25 active:scale-[.99] transition flex items-center justify-center gap-2">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>📷 เลือกรูปจากเครื่อง / ถ่ายภาพ (มือถือ & PC)</span>
       </button>
     </div>
 
     <div class="border-t border-slate-100 pt-3">
-      <p class="text-[11px] font-semibold text-slate-400 mb-2">หรือเลือกไอคอนเร็ว:</p>
+      <p class="text-[11px] font-semibold text-slate-400 mb-2.5">หรือเลือกไอคอนด่วน:</p>
       <div class="grid grid-cols-6 gap-2 text-xl">
-        {% for icon in ['👨‍💻','👩‍💻','🧑‍💼','🐱','🦊','🐼','🚀','🌟','⚡','🎯','🤖','👑'] %}
-        <button onclick="setEmojiAvatar('{{ icon }}')" class="h-10 w-10 rounded-xl bg-slate-50 hover:bg-sky-100 border border-slate-100 flex items-center justify-center transition active:scale-95">
+        {% for icon in ['👨‍💻','👩‍💻','🧑‍💼','🐱','🦊','🐼','🚀','🌟','⚡','🎯','🤖','👑','💼','😎','🔥','💎','🦁','🐶'] %}
+        <button onclick="setEmojiAvatar('{{ icon }}')" class="h-10 w-10 rounded-xl bg-slate-50 hover:bg-sky-100 border border-slate-100 flex items-center justify-center transition active:scale-95 shadow-sm">
           {{ icon }}
         </button>
         {% endfor %}
@@ -340,12 +348,14 @@ function openAvatarModal() { const m = document.getElementById('avatarModal'); m
 function closeAvatarModal() { const m = document.getElementById('avatarModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 
 async function saveAvatar(avatarData) {
-  const r = await fetch("{{ url_for('set_avatar') }}", {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({avatar: avatarData})
-  });
-  if(r.ok) { location.reload(); }
+  try {
+    const r = await fetch("{{ url_for('set_avatar') }}", {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({avatar: avatarData})
+    });
+    if(r.ok) { location.reload(); }
+  } catch(e) { alert('บันทึกรูปโปรไฟล์ไม่สำเร็จ'); }
 }
 function setEmojiAvatar(emoji) { saveAvatar(emoji); }
 
@@ -357,14 +367,14 @@ function uploadProfileAvatar(e) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const size = 160;
+      const size = 256;
       canvas.width = size; canvas.height = size;
       const ctx = canvas.getContext('2d');
       const minSide = Math.min(img.width, img.height);
       const sx = (img.width - minSide) / 2;
       const sy = (img.height - minSide) / 2;
       ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
       saveAvatar(dataUrl);
     };
     img.src = ev.target.result;
@@ -451,11 +461,11 @@ LOBBY = r"""
           <span class="hidden sm:inline">QR มือถือ</span>
         </button>
 
-        <!-- User Profile Card -->
-        <button onclick="openAvatarModal()" class="flex items-center gap-2 bg-white rounded-full pl-1 pr-3 py-1 border border-slate-200 shadow-sm hover:border-sky-300 transition" title="กดเพื่อเปลี่ยนรูปโปรไฟล์">
+        <!-- User Profile Card (Clickable to change avatar) -->
+        <button onclick="openAvatarModal()" class="flex items-center gap-2 bg-white rounded-full pl-1.5 pr-3 py-1 border border-slate-200 shadow-sm hover:border-sky-400 hover:bg-sky-50/50 transition group" title="คลิกเพื่อเปลี่ยนรูปโปรไฟล์ของคุณ">
           <span class="avatar h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner" data-name="{{ me }}" data-avatar="{{ my_avatar }}"></span>
-          <span class="text-sm font-semibold text-slate-700">{{ me }}</span>
-          <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          <span class="text-sm font-semibold text-slate-700 group-hover:text-sky-700 transition">{{ me }}</span>
+          <span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded-full">เปลี่ยนรูป</span>
         </button>
         
         <a href="{{ url_for('logout') }}" class="p-2 text-slate-400 hover:text-rose-600 transition" title="ออกจากระบบ">
@@ -476,7 +486,7 @@ LOBBY = r"""
           </div>
           <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">ยินดีต้อนรับ, {{ me }} 👋</h2>
           <p class="text-sky-100 text-sm mt-1 max-w-xl">
-            สร้างห้องแชท ปรับแต่งรูปห้อง ส่งรูปภาพ ส่งพิกัดตำแหน่ง GPS และจัดการสมาชิกได้ในที่เดียว
+            สร้างห้องแชท ส่งรูปภาพ/ไฟล์เอกสาร ส่งพิกัดตำแหน่ง GPS และจัดการสมาชิกได้ในที่เดียว
           </p>
         </div>
 
@@ -536,7 +546,7 @@ LOBBY = r"""
             </div>
             <div>
               <h3 class="font-bold text-lg text-slate-800">สร้างห้องแชทใหม่</h3>
-              <p class="text-xs text-slate-500">เลือกรูปไอคอนประจำห้องได้</p>
+              <p class="text-xs text-slate-500">คุณจะเป็น 👑 Admin ผู้ดูแลห้องนี้</p>
             </div>
           </div>
 
@@ -549,54 +559,52 @@ LOBBY = r"""
 
             <!-- Room Icon Selection -->
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกรูปไอคอนห้อง</label>
-              <div class="flex items-center gap-2 overflow-x-auto py-1">
-                {% for ic in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟'] %}
-                <label class="cursor-pointer">
-                  <input type="radio" name="room_icon" value="{{ ic }}" class="sr-only peer" {% if ic=='💬' %}checked{% endif %}>
-                  <span class="h-9 w-9 rounded-xl bg-slate-50 peer-checked:bg-sky-500 peer-checked:text-white border border-slate-200 peer-checked:border-sky-500 flex items-center justify-center text-base transition">
-                    {{ ic }}
-                  </span>
-                </label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">ไอคอนประจำห้อง</label>
+              <div class="flex items-center gap-2 overflow-x-auto pb-1 scroll-thin">
+                <input type="hidden" name="room_icon" id="selectedRoomIcon" value="💬">
+                {% for ic in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟','🔥','🎉'] %}
+                <button type="button" onclick="selectRoomIcon(this, '{{ ic }}')"
+                  class="room-icon-btn h-10 w-10 rounded-xl bg-white border border-sky-100 text-lg flex items-center justify-center transition shrink-0 {{ 'ring-2 ring-sky-500 bg-sky-50 font-bold' if loop.first else '' }}">
+                  {{ ic }}
+                </button>
                 {% endfor %}
               </div>
             </div>
 
-            <div class="bg-sky-50/70 p-3.5 rounded-2xl border border-sky-100 space-y-2">
-              <div class="flex items-center justify-between">
+            <!-- Password Option Toggle -->
+            <div class="bg-sky-50/70 p-3 rounded-2xl border border-sky-100 space-y-2">
+              <label class="flex items-center justify-between cursor-pointer">
                 <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                   <svg class="h-4 w-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                  การป้องกันด้วยรหัสผ่าน
+                  ตั้งรหัสผ่านสำหรับเข้าห้อง (ห้องส่วนตัว)
                 </span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" id="passToggle" name="is_private" value="1" class="sr-only peer" onchange="togglePasswordInput(this.checked)">
-                  <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                </label>
-              </div>
+                <input type="checkbox" name="is_private" value="1" onchange="togglePasswordInput(this.checked)"
+                  class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500 border-slate-300">
+              </label>
 
-              <div id="passField" class="hidden pt-2">
-                <input type="password" id="roomPassInput" name="password" maxlength="{{ max_pass }}" placeholder="ตั้งรหัสผ่านเข้าห้อง (ตัวเลขหรือข้อความ)"
-                  class="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400">
+              <div id="passField" class="hidden pt-1">
+                <input id="roomPassInput" name="password" type="password" maxlength="{{ max_pass }}" placeholder="กำหนดรหัสผ่านห้อง (เช่น 1234)"
+                  class="w-full rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 transition font-medium">
               </div>
               <p id="passHint" class="text-[11px] text-sky-700">✓ ปัจจุบัน: <b>ไม่ต้องใส่รหัสห้อง</b> (ทุกคนเข้าได้ทันที)</p>
             </div>
 
-            <button class="w-full rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3.5 shadow-md shadow-sky-500/20 active:scale-[.99] transition">
-              + สร้างห้องแชท
+            <button class="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white font-bold py-3.5 shadow-md shadow-blue-500/20 active:scale-[.99] transition flex items-center justify-center gap-2">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              <span>สร้างห้องสนทนา</span>
             </button>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Active Rooms in Network -->
-    <section>
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 class="text-lg font-bold text-slate-800">ห้องทั้งหมดในระบบ</h3>
-          <p class="text-xs text-slate-500">เลือกกดเข้าร่วมได้ทันที หรือดูห้องที่คุณเคยเข้าใช้งาน</p>
-        </div>
-        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-700">{{ all_rooms|length }} ห้อง</span>
+    <!-- Active Rooms List -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <span>ห้องสนทนาทั้งหมดในระบบ</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700">{{ all_rooms|length }} ห้อง</span>
+        </h3>
       </div>
 
       {% if all_rooms %}
@@ -668,6 +676,12 @@ LOBBY = r"""
 %%AVATAR_JS%%
 document.querySelectorAll('.avatar').forEach(paintAvatar);
 document.querySelectorAll('.room-icon-box').forEach(paintRoomIcon);
+
+function selectRoomIcon(btn, ic) {
+  document.querySelectorAll('.room-icon-btn').forEach(b => b.classList.remove('ring-2', 'ring-sky-500', 'bg-sky-50', 'font-bold'));
+  btn.classList.add('ring-2', 'ring-sky-500', 'bg-sky-50', 'font-bold');
+  document.getElementById('selectedRoomIcon').value = ic;
+}
 
 function togglePasswordInput(checked) {
   const field = document.getElementById('passField');
@@ -754,7 +768,7 @@ ROOM = r"""
       <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
     </a>
 
-    <!-- Room Icon Button (Clickable by Admin) -->
+    <!-- Room Icon Button (Clickable by Admin to change) -->
     <button {% if is_admin %}onclick="openRoomIconModal()"{% endif %} class="room-icon-box h-10 w-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center font-black shadow-md shadow-sky-500/20 shrink-0 text-lg overflow-hidden border border-sky-200 relative group"
       data-icon="{{ room.icon }}" data-name="{{ room.name }}" title="{{ 'กดเพื่อเปลี่ยนรูปห้องแชท (Admin)' if is_admin else room.name }}">
       {{ room.icon if room.icon and room.icon|length <= 4 else room.name[:1] }}
@@ -787,6 +801,12 @@ ROOM = r"""
 
     <!-- Header Actions -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Profile avatar toggle -->
+      <button onclick="openAvatarModal()" class="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 px-2 py-1 rounded-full border border-sky-200 text-xs font-semibold transition" title="เปลี่ยนรูปโปรไฟล์ของคุณ">
+        <span class="avatar h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-inner" data-name="{{ me }}" data-avatar="{{ my_avatar }}"></span>
+        <span class="hidden sm:inline">{{ me }}</span>
+      </button>
+
       <button id="soundToggle" onclick="toggleSound()" class="h-9 w-9 rounded-xl hover:bg-slate-100 text-slate-500 flex items-center justify-center transition" title="เปิด/ปิดเสียงแจ้งเตือน">
         <svg id="soundOnIcon" class="h-4.5 w-4.5 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
         <svg id="soundOffIcon" class="h-4.5 w-4.5 text-slate-400 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
@@ -825,27 +845,37 @@ ROOM = r"""
         </div>
       </div>
 
-      <!-- Image Preview Bar -->
-      <div id="imgPreviewBar" class="hidden px-4 py-2 bg-sky-50/90 border-t border-sky-100 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img id="previewImg" class="h-14 w-14 object-cover rounded-xl border border-sky-200 shadow-sm">
-          <div class="text-xs">
-            <p class="font-bold text-slate-700">แนบรูปภาพพร้อมส่ง</p>
-            <p id="previewSize" class="text-slate-400 text-[11px]"></p>
+      <!-- File / Image Preview Bar -->
+      <div id="attachmentPreviewBar" class="hidden px-4 py-2.5 bg-sky-50/95 border-t border-sky-200 flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="previewIconBox" class="h-12 w-12 rounded-xl bg-white border border-sky-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+            <img id="previewImg" class="hidden h-full w-full object-cover">
+            <span id="previewDocIcon" class="text-2xl font-bold">📄</span>
+          </div>
+          <div class="text-xs min-w-0">
+            <p id="previewName" class="font-bold text-slate-800 truncate">แนบไฟล์พร้อมส่ง</p>
+            <p id="previewSize" class="text-slate-500 text-[11px]"></p>
           </div>
         </div>
-        <button type="button" onclick="cancelImage()" class="h-7 w-7 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-sm">&times;</button>
+        <button type="button" onclick="cancelAttachment()" class="h-8 w-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center text-base transition shrink-0" title="ยกเลิกไฟล์">&times;</button>
       </div>
 
       <!-- Composer Form -->
       <form id="composer" class="bg-white/95 backdrop-blur border-t border-sky-100 p-2.5 sm:p-4 shrink-0">
         <div class="flex items-end gap-1.5 sm:gap-2 max-w-5xl mx-auto">
           
-          <!-- Image Attachment Button -->
-          <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-          <button type="button" onclick="document.getElementById('fileInput').click()"
+          <!-- Image Attachment Button (Camera / Gallery) -->
+          <input type="file" id="imgFileInput" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+          <button type="button" onclick="document.getElementById('imgFileInput').click()"
             class="h-11 w-11 shrink-0 rounded-2xl bg-sky-50 hover:bg-sky-100 text-sky-600 flex items-center justify-center transition border border-sky-200" title="ส่งรูปภาพ หรือ ถ่ายภาพ">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </button>
+
+          <!-- Document / All Files Button -->
+          <input type="file" id="docFileInput" class="hidden" onchange="handleDocSelect(event)">
+          <button type="button" onclick="document.getElementById('docFileInput').click()"
+            class="h-11 w-11 shrink-0 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition border border-indigo-200" title="ส่งไฟล์เอกสาร (PDF, Word, Excel, ZIP ฯลฯ)">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
           </button>
 
           <!-- Location Button -->
@@ -855,7 +885,7 @@ ROOM = r"""
           </button>
 
           <!-- Textarea -->
-          <textarea id="input" rows="1" maxlength="{{ max_msg }}" placeholder="พิมพ์ข้อความ... (กด Enter เพื่อส่ง, วางรูปภาพได้)"
+          <textarea id="input" rows="1" maxlength="{{ max_msg }}" placeholder="พิมพ์ข้อความ... (กด Enter เพื่อส่ง, วางรูปภาพ/ไฟล์ได้)"
             class="flex-1 resize-none max-h-36 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 sm:py-3 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition"></textarea>
 
           <!-- Send Button -->
@@ -895,7 +925,7 @@ ROOM = r"""
         {% if is_admin %}
         <div class="space-y-1.5">
           <button onclick="openRoomIconModal()" class="w-full py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl font-bold transition text-center border border-sky-200 flex items-center justify-center gap-1.5">
-            <span>🖼️ เปลี่ยนรูป/ไอคอนห้อง</span>
+            <span>🖼️ เปลี่ยนรูป/ไอคอนห้อง (Admin)</span>
           </button>
           <form method="post" action="{{ url_for('delete_room', code=room.code) }}" onsubmit="return confirm('คุณเป็น Admin ต้องการลบห้องนี้และข้อความทั้งหมดใช่หรือไม่?')">
             <button class="w-full py-2 text-rose-600 hover:bg-rose-50 rounded-xl font-medium transition text-center">
@@ -919,9 +949,9 @@ ROOM = r"""
     <div class="flex flex-col items-center gap-3 mb-5">
       <input type="file" id="roomIconFileInput" accept="image/*" class="hidden" onchange="uploadRoomPhoto(event)">
       <button type="button" onclick="document.getElementById('roomIconFileInput').click()"
-        class="px-4 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs border border-sky-200 transition flex items-center gap-1.5">
+        class="w-full py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs border border-sky-200 transition flex items-center justify-center gap-1.5">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        <span>อัปโหลดรูปถ่ายห้องแชท</span>
+        <span>📷 อัปโหลดรูปถ่ายห้องแชท</span>
       </button>
     </div>
 
@@ -990,7 +1020,7 @@ const MOD_API = "{{ url_for('api_moderate', code=room.code) }}";
 const ICON_API = "{{ url_for('api_set_room_icon', code=room.code) }}";
 let lastId = 0, lastAuthor = null, lastTime = 0, lastDay = null, polling = false;
 let soundEnabled = true;
-let pendingImageBase64 = null;
+let pendingAttachment = null; // { type: 'image'|'file', data: '...', name: '...', size: '...' }
 let currentTargetUser = '';
 
 // Web Audio chime
@@ -1083,6 +1113,19 @@ function uploadRoomPhoto(e) {
   reader.readAsDataURL(file);
 }
 
+function getFileIconAndColor(filename) {
+  const ext = (filename.split('.').pop() || '').toLowerCase();
+  if(['pdf'].includes(ext)) return { icon: '📄', color: 'bg-rose-100 text-rose-700 border-rose-200' };
+  if(['doc', 'docx'].includes(ext)) return { icon: '📝', color: 'bg-blue-100 text-blue-700 border-blue-200' };
+  if(['xls', 'xlsx', 'csv'].includes(ext)) return { icon: '📊', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+  if(['ppt', 'pptx'].includes(ext)) return { icon: '📊', color: 'bg-orange-100 text-orange-700 border-orange-200' };
+  if(['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return { icon: '📦', color: 'bg-purple-100 text-purple-700 border-purple-200' };
+  if(['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(ext)) return { icon: '🎵', color: 'bg-amber-100 text-amber-700 border-amber-200' };
+  if(['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return { icon: '🎬', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
+  if(['txt', 'log', 'md', 'json'].includes(ext)) return { icon: '📃', color: 'bg-slate-100 text-slate-700 border-slate-200' };
+  return { icon: '📁', color: 'bg-sky-100 text-sky-700 border-sky-200' };
+}
+
 function addMessage(m, isHistory) {
   const day = fmtDay(m.created_at);
   if(day !== lastDay){
@@ -1113,7 +1156,7 @@ function addMessage(m, isHistory) {
     row.append(av);
   }
 
-  const col = el('div', `flex flex-col max-w-[85%] sm:max-w-[70%] ${mine ? 'items-end' : 'items-start'}`);
+  const col = el('div', `flex flex-col max-w-[85%] sm:max-w-[75%] ${mine ? 'items-end' : 'items-start'}`);
   if(!grouped && !mine) {
     const authorWrap = el('div', 'flex items-center gap-1 mb-1 ml-1');
     authorWrap.append(el('span', 'text-xs font-bold text-slate-600', m.author));
@@ -1127,26 +1170,63 @@ function addMessage(m, isHistory) {
       mine ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-sm shadow-sky-500/10'
            : 'bg-white text-slate-800 rounded-bl-sm border border-slate-200/80 shadow-slate-100'}`);
 
-  // Image attachment
+  // 1. Image attachment
   if(m.msg_type === 'image' && m.file_data) {
-    const imgWrap = el('div', 'mb-2 cursor-pointer');
-    const img = el('img', 'rounded-xl max-h-64 object-cover hover:opacity-95 transition border border-black/10');
-    img.src = m.file_data; img.onclick = () => viewFullImage(m.file_data);
-    imgWrap.append(img); bubble.append(imgWrap);
+    const imgWrap = el('div', 'mb-2 cursor-pointer relative group');
+    const img = el('img', 'rounded-xl max-h-64 object-cover hover:opacity-95 transition border border-black/10 shadow-sm');
+    img.src = m.file_data; 
+    img.onclick = () => viewFullImage(m.file_data);
+    imgWrap.append(img);
+    bubble.append(imgWrap);
   }
 
-  // Location Card
+  // 2. Document / General File Card
+  if(m.msg_type === 'file' && m.file_data) {
+    try {
+      let fileMeta = {};
+      try { fileMeta = JSON.parse(m.file_data); } catch(_) { fileMeta = { name: m.body || 'ไฟล์แนบ', data: m.file_data, size: '' }; }
+      
+      const fileName = fileMeta.name || m.body || 'download_file';
+      const fileSize = fileMeta.size || '';
+      const fileData = fileMeta.data || m.file_data;
+      const fileMetaInfo = getFileIconAndColor(fileName);
+
+      const fileCard = el('div', `p-3 rounded-2xl mb-1.5 border flex items-center justify-between gap-3 ${
+        mine ? 'bg-white/15 border-white/20 text-white' : 'bg-sky-50/70 border-sky-200 text-slate-800'
+      }`);
+
+      const left = el('div', 'flex items-center gap-2.5 min-w-0');
+      const iconWrap = el('div', `h-10 w-10 rounded-xl flex items-center justify-center text-xl shrink-0 border ${fileMetaInfo.color}`, fileMetaInfo.icon);
+      
+      const textCol = el('div', 'min-w-0');
+      const nameTxt = el('div', 'font-bold text-xs truncate', fileName);
+      const sizeTxt = el('div', 'text-[11px] opacity-75 font-mono', fileSize ? fileSize : 'ไฟล์เอกสาร');
+      textCol.append(nameTxt, sizeTxt);
+      left.append(iconWrap, textCol);
+
+      const downloadLink = el('a', `px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition shrink-0 ${
+        mine ? 'bg-white text-sky-700 hover:bg-sky-50 shadow-sm' : 'bg-sky-600 text-white hover:bg-sky-700 shadow-sm shadow-sky-600/20'
+      }`, '📥 ดาวน์โหลด');
+      downloadLink.href = fileData;
+      downloadLink.download = fileName;
+
+      fileCard.append(left, downloadLink);
+      bubble.append(fileCard);
+    } catch(e){}
+  }
+
+  // 3. Location Card
   if(m.msg_type === 'location' && m.file_data) {
     try {
       const loc = JSON.parse(m.file_data);
       const mapsUrl = `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
-      const locCard = el('div', `p-3 rounded-xl mb-1.5 border flex flex-col gap-2 ${
-        mine ? 'bg-white/15 border-white/20 text-white' : 'bg-sky-50 border-sky-200 text-slate-800'
+      const locCard = el('div', `p-3 rounded-2xl mb-1.5 border flex flex-col gap-2 ${
+        mine ? 'bg-white/15 border-white/20 text-white' : 'bg-emerald-50/70 border-emerald-200 text-slate-800'
       }`);
       
       const topInfo = el('div', 'flex items-center gap-2');
       topInfo.innerHTML = `
-        <div class="h-8 w-8 rounded-lg ${mine ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-600'} flex items-center justify-center shrink-0 font-bold">
+        <div class="h-9 w-9 rounded-xl ${mine ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'} flex items-center justify-center shrink-0 font-bold text-lg">
           📍
         </div>
         <div class="min-w-0">
@@ -1155,7 +1235,7 @@ function addMessage(m, isHistory) {
         </div>
       `;
       
-      const mapBtn = el('a', `mt-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+      const mapBtn = el('a', `mt-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
         mine ? 'bg-white text-sky-700 hover:bg-sky-50 shadow-sm' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20'
       }`, '🗺️ เปิดดูบน Google Maps');
       mapBtn.href = mapsUrl;
@@ -1167,8 +1247,11 @@ function addMessage(m, isHistory) {
     } catch(e){}
   }
 
-  if(m.body && m.msg_type !== 'location') {
-    bubble.append(document.createTextNode(m.body));
+  // Text message (if not redundant with file name)
+  if(m.body && m.msg_type !== 'location' && !(m.msg_type === 'file' && m.body === 'ไฟล์เอกสาร')) {
+    if(m.msg_type === 'text' || (m.body && m.msg_type !== 'file')) {
+      bubble.append(document.createTextNode(m.body));
+    }
   }
 
   bubble.title = fmtTime(m.created_at);
@@ -1194,7 +1277,7 @@ function shareCurrentLocation() {
       const lng = position.coords.longitude;
       try {
         const payload = {
-          body: `📍 พิกัด: ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+          body: `📍 พิกัด GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
           msg_type: 'location',
           file_data: JSON.stringify({lat: lat, lng: lng})
         };
@@ -1302,7 +1385,7 @@ async function poll(){
       const stick = nearBottom() || lastId === 0;
       const isInitial = lastId === 0;
       data.messages.forEach(m => {
-        addMessage(m, isInitial);
+        addMessage(m, isHistory);
         lastId = Math.max(lastId, m.id);
       });
       if(data.messages.length && stick) { box.scrollTop = box.scrollHeight; }
@@ -1323,7 +1406,15 @@ async function poll(){
   polling = false;
 }
 
-// Image compression
+// ──────────────────────── File / Image Handling ────────────────────────
+function formatFileSize(bytes) {
+  if(!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
 function compressImage(file, callback) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -1339,7 +1430,7 @@ function compressImage(file, callback) {
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       callback(dataUrl);
     };
     img.src = e.target.result;
@@ -1347,24 +1438,74 @@ function compressImage(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function handleFileSelect(e) {
+function handleImageSelect(e) {
   const file = e.target.files?.[0];
   if(!file) return;
   compressImage(file, dataUrl => {
-    pendingImageBase64 = dataUrl;
-    document.getElementById('previewImg').src = dataUrl;
-    document.getElementById('previewSize').textContent = `${(file.size/1024).toFixed(1)} KB`;
-    document.getElementById('imgPreviewBar').classList.remove('hidden');
-    input.focus();
+    pendingAttachment = {
+      type: 'image',
+      name: file.name,
+      size: formatFileSize(file.size),
+      data: dataUrl
+    };
+    showAttachmentPreview();
   });
 }
-function cancelImage() {
-  pendingImageBase64 = null;
-  document.getElementById('fileInput').value = '';
-  document.getElementById('imgPreviewBar').classList.add('hidden');
+
+function handleDocSelect(e) {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  if(file.size > 20 * 1024 * 1024) {
+    alert('ขนาดไฟล์เกินขีดจำกัด (สูงสุดไม่เกิน 20 MB)');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingAttachment = {
+      type: 'file',
+      name: file.name,
+      size: formatFileSize(file.size),
+      data: ev.target.result
+    };
+    showAttachmentPreview();
+  };
+  reader.readAsDataURL(file);
 }
 
-// Paste image
+function showAttachmentPreview() {
+  if(!pendingAttachment) return;
+  const bar = document.getElementById('attachmentPreviewBar');
+  const img = document.getElementById('previewImg');
+  const docIcon = document.getElementById('previewDocIcon');
+  const nameEl = document.getElementById('previewName');
+  const sizeEl = document.getElementById('previewSize');
+
+  nameEl.textContent = pendingAttachment.name || 'ไฟล์แนบ';
+  sizeEl.textContent = `${pendingAttachment.size} · พร้อมส่ง`;
+
+  if(pendingAttachment.type === 'image') {
+    img.src = pendingAttachment.data;
+    img.classList.remove('hidden');
+    docIcon.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    docIcon.classList.remove('hidden');
+    const info = getFileIconAndColor(pendingAttachment.name);
+    docIcon.textContent = info.icon;
+  }
+
+  bar.classList.remove('hidden');
+  input.focus();
+}
+
+function cancelAttachment() {
+  pendingAttachment = null;
+  document.getElementById('imgFileInput').value = '';
+  document.getElementById('docFileInput').value = '';
+  document.getElementById('attachmentPreviewBar').classList.add('hidden');
+}
+
+// Paste image / file from clipboard
 document.addEventListener('paste', e => {
   const items = e.clipboardData?.items;
   if(!items) return;
@@ -1372,10 +1513,13 @@ document.addEventListener('paste', e => {
     if(items[i].type.indexOf('image') !== -1) {
       const file = items[i].getAsFile();
       compressImage(file, dataUrl => {
-        pendingImageBase64 = dataUrl;
-        document.getElementById('previewImg').src = dataUrl;
-        document.getElementById('previewSize').textContent = 'รูปภาพจากคลิปบอร์ด';
-        document.getElementById('imgPreviewBar').classList.remove('hidden');
+        pendingAttachment = {
+          type: 'image',
+          name: 'pasted_image.jpg',
+          size: formatFileSize(file.size),
+          data: dataUrl
+        };
+        showAttachmentPreview();
       });
       break;
     }
@@ -1384,19 +1528,35 @@ document.addEventListener('paste', e => {
 
 async function send(){
   const body = input.value.trim();
-  const fileData = pendingImageBase64;
-  if(!body && !fileData) return;
+  const attach = pendingAttachment;
+  if(!body && !attach) return;
 
   sendBtn.disabled = true;
   try {
-    const payload = { body: body, msg_type: fileData ? 'image' : 'text', file_data: fileData };
+    let payload = { body: body, msg_type: 'text', file_data: null };
+
+    if(attach) {
+      if(attach.type === 'image') {
+        payload.msg_type = 'image';
+        payload.file_data = attach.data;
+      } else if(attach.type === 'file') {
+        payload.msg_type = 'file';
+        payload.body = body || attach.name;
+        payload.file_data = JSON.stringify({
+          name: attach.name,
+          size: attach.size,
+          data: attach.data
+        });
+      }
+    }
+
     const r = await fetch(API, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     });
     if(r.ok){
-      input.value = ''; cancelImage(); autosize(); await poll();
+      input.value = ''; cancelAttachment(); autosize(); await poll();
       box.scrollTop = box.scrollHeight;
     } else if(r.status === 403) {
       const err = await r.json();
@@ -1532,6 +1692,9 @@ def set_avatar():
         return jsonify(error="unauthorized"), 401
     avatar = (request.get_json(silent=True) or {}).get("avatar", "").strip()
     session["avatar"] = avatar
+    db = get_db()
+    db.execute("UPDATE presence SET avatar=? WHERE name=?", (avatar, me))
+    db.commit()
     return jsonify(ok=True)
 
 
@@ -1624,8 +1787,9 @@ def room(code):
 
     remember_room(code)
     is_admin = (r["created_by"] == me)
+    my_avatar = session.get("avatar", "")
     room_url = f"{request.host_url.rstrip('/')}/room/{code}"
-    return page(ROOM, title=f"{r['name']} · #{code}", me=me, room=r, is_admin=is_admin,
+    return page(ROOM, title=f"{r['name']} · #{code}", me=me, my_avatar=my_avatar, room=r, is_admin=is_admin,
                 room_url=room_url, max_msg=MAX_MSG)
 
 
