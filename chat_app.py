@@ -543,7 +543,7 @@ LOBBY = r"""
           <form method="post" action="{{ url_for('create') }}" class="space-y-3.5">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อห้อง</label>
-              <input name="room_name" maxlength="{{ max_room }}" placeholder="เช่น ทีม QC, สนทนาทั่วไป, แผนกช่าง"
+              <input name="room_name" maxlength="{{ max_room }}" placeholder="เช่น สนทนาทั่วไป"
                 class="w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition">
             </div>
 
