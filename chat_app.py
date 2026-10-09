@@ -375,7 +375,7 @@ LOGIN = r"""
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-1.5">ชื่อหรือฉายาที่ใช้ในแชท</label>
         <div class="relative">
-          <input name="name" required maxlength="{{ max_name }}" autofocus placeholder="เช่น สมชาย (IT), วิชัย, น้องพิมพ์"
+          <input name="name" required maxlength="{{ max_name }}" autofocus placeholder="เช่น ต้นคิด, ก้องภพ"
             class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 pl-11 text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition font-medium">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -510,7 +510,7 @@ LOBBY = r"""
           <form method="post" action="{{ url_for('create') }}" class="space-y-3.5">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อห้อง</label>
-              <input name="room_name" maxlength="{{ max_room }}" placeholder="เช่น ทีม QC, สนทนาทั่วไป, แผนกช่าง"
+              <input name="room_name" maxlength="{{ max_room }}" placeholder="เช่น สนทนาทั่วไป"
                 class="w-full rounded-2xl border border-sky-100 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition">
             </div>
 
