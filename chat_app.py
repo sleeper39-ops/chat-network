@@ -810,7 +810,7 @@ ROOM = r"""
             class="flex-1 resize-none max-h-36 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 sm:py-3 text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition"></textarea>
 
           <!-- Send Button -->
-          <button id="sendBtn" type="submit"
+          <button id="sendBtn" type="button" onclick="send()"
             class="h-11 w-11 shrink-0 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white flex items-center justify-center shadow-md shadow-sky-500/30 hover:brightness-105 active:scale-95 disabled:opacity-40 transition">
             <svg class="h-5 w-5 rotate-90" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>
           </button>
@@ -941,6 +941,7 @@ const MOD_API = "{{ url_for('api_moderate', code=room.code) }}";
 const ICON_API = "{{ url_for('api_set_room_icon', code=room.code) }}";
 let lastId = 0, lastAuthor = null, lastTime = 0, lastDay = null, polling = false;
 let isSending = false;
+const seenMsgIds = new Set();
 let soundEnabled = true;
 let pendingAttachment = null; // { type: 'image'|'file', data: '...', name: '...', size: '...' }
 let currentTargetUser = '';
@@ -1049,6 +1050,10 @@ function getFileIconAndColor(filename) {
 }
 
 function addMessage(m, isInitial) {
+  if (m.id) {
+    if (seenMsgIds.has(m.id)) return;
+    seenMsgIds.add(m.id);
+  }
   const day = fmtDay(m.created_at);
   if(day !== lastDay){
     const d = el('div', 'flex items-center gap-3 my-4 text-xs text-sky-700/60 font-medium');
