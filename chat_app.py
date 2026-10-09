@@ -1,12 +1,12 @@
 """
 Chat Network — ระบบแชทองค์กร & ออนไลน์ 24 ชม. (Flask Single File)
 - ธีมสีฟ้าสดใส (Sky & Ocean Blue)
-- เปลี่ยนรูปโปรไฟล์ส่วนตัวได้ (อัปโหลดรูปภาพจากคอมพิวเตอร์ / มือถือ หรือเลือกไอคอนอีโมจิ)
-- เปลี่ยนรูปประจำห้องแชทได้ (อัปโหลดรูปถ่ายห้อง / เลือกไอคอน)
+- เปลี่ยนรูปประจำห้องแชทได้ (อัปโหลดรูปถ่ายห้อง / เลือกไอคอน) เฉพาะ 👑 Admin
 - ส่งรูปภาพ ถ่ายภาพจากมือถือ และกด Ctrl+V วางภาพได้ทันที
 - ส่งไฟล์เอกสารทุกชนิด (PDF, Word, Excel, ZIP, MP3, MP4, Text ฯลฯ) พร้อมการ์ดดาวน์โหลด
 - ส่งพิกัดตำแหน่ง GPS พร้อมปุ่มเปิดดูบน Google Maps ทันที
 - สิทธิ์ 👑 Admin สำหรับผู้สร้างห้อง (Mute ปิดเสียง 1, 2, 5 นาที / Kick เตะออกจากห้อง)
+- รายชื่อสมาชิกในห้องแชท (Members Sidebar) ด้านข้าง และปุ่มดูสมาชิกบนมือถือ
 - รองรับห้องแบบมีรหัสผ่าน และห้องสาธารณะ
 - มี QR Code ให้มือถือสแกนเข้าใช้งานได้ทันที
 """
@@ -261,41 +261,6 @@ BASE = r"""<!doctype html>
 
 %%BODY%%
 
-<!-- Profile Avatar Change Modal -->
-<div id="avatarModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-  <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl pop border border-sky-100 text-center relative">
-    <button onclick="closeAvatarModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition text-lg">&times;</button>
-    
-    <div class="mx-auto mb-3 h-16 w-16 rounded-full bg-sky-100 border-2 border-sky-300 flex items-center justify-center shadow-inner overflow-hidden" id="modalAvatarPreview">
-      <span class="text-2xl font-bold text-sky-700">🧑‍💼</span>
-    </div>
-
-    <h3 class="text-lg font-bold text-slate-800 mb-1">เปลี่ยนรูปโปรไฟล์ของคุณ</h3>
-    <p class="text-xs text-slate-500 mb-5">เลือกรูปถ่ายจากเครื่องคอมพิวเตอร์ / มือถือ หรือเลือกไอคอนอีโมจิ</p>
-
-    <!-- Upload from device button -->
-    <div class="mb-5">
-      <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="uploadProfileAvatar(event)">
-      <button type="button" onclick="document.getElementById('avatarFileInput').click()"
-        class="w-full py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs shadow-md shadow-sky-500/25 active:scale-[.99] transition flex items-center justify-center gap-2">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        <span>📷 เลือกรูปจากเครื่อง / ถ่ายภาพ (มือถือ & PC)</span>
-      </button>
-    </div>
-
-    <div class="border-t border-slate-100 pt-3">
-      <p class="text-[11px] font-semibold text-slate-400 mb-2.5">หรือเลือกไอคอนด่วน:</p>
-      <div class="grid grid-cols-6 gap-2 text-xl">
-        {% for icon in ['👨‍💻','👩‍💻','🧑‍💼','🐱','🦊','🐼','🚀','🌟','⚡','🎯','🤖','👑','💼','😎','🔥','💎','🦁','🐶'] %}
-        <button onclick="setEmojiAvatar('{{ icon }}')" class="h-10 w-10 rounded-xl bg-slate-50 hover:bg-sky-100 border border-slate-100 flex items-center justify-center transition active:scale-95 shadow-sm">
-          {{ icon }}
-        </button>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Global QR Code Modal -->
 <div id="qrModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
   <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl pop border border-sky-100 text-center relative">
@@ -342,44 +307,6 @@ async function copyQrUrl() {
     btn.classList.replace('bg-sky-600', 'bg-emerald-600');
     setTimeout(() => { btn.textContent = 'คัดลอก'; btn.classList.replace('bg-emerald-600', 'bg-sky-600'); }, 1500);
   } catch(e) { urlInput.select(); document.execCommand('copy'); }
-}
-
-function openAvatarModal() { const m = document.getElementById('avatarModal'); m.classList.remove('hidden'); m.classList.add('flex'); }
-function closeAvatarModal() { const m = document.getElementById('avatarModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
-
-async function saveAvatar(avatarData) {
-  try {
-    const r = await fetch("{{ url_for('set_avatar') }}", {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({avatar: avatarData})
-    });
-    if(r.ok) { location.reload(); }
-  } catch(e) { alert('บันทึกรูปโปรไฟล์ไม่สำเร็จ'); }
-}
-function setEmojiAvatar(emoji) { saveAvatar(emoji); }
-
-function uploadProfileAvatar(e) {
-  const file = e.target.files?.[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const size = 256;
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      const minSide = Math.min(img.width, img.height);
-      const sx = (img.width - minSide) / 2;
-      const sy = (img.height - minSide) / 2;
-      ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-      saveAvatar(dataUrl);
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
 }
 </script>
 </body>
@@ -461,12 +388,11 @@ LOBBY = r"""
           <span class="hidden sm:inline">QR มือถือ</span>
         </button>
 
-        <!-- User Profile Card (Clickable to change avatar) -->
-        <button onclick="openAvatarModal()" class="flex items-center gap-2 bg-white rounded-full pl-1.5 pr-3 py-1 border border-slate-200 shadow-sm hover:border-sky-400 hover:bg-sky-50/50 transition group" title="คลิกเพื่อเปลี่ยนรูปโปรไฟล์ของคุณ">
-          <span class="avatar h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner" data-name="{{ me }}" data-avatar="{{ my_avatar }}"></span>
-          <span class="text-sm font-semibold text-slate-700 group-hover:text-sky-700 transition">{{ me }}</span>
-          <span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded-full">เปลี่ยนรูป</span>
-        </button>
+        <!-- User Profile Card -->
+        <div class="flex items-center gap-2 bg-white rounded-full pl-1.5 pr-3 py-1 border border-slate-200 shadow-sm">
+          <span class="avatar h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-inner" data-name="{{ me }}"></span>
+          <span class="text-sm font-semibold text-slate-700">{{ me }}</span>
+        </div>
         
         <a href="{{ url_for('logout') }}" class="p-2 text-slate-400 hover:text-rose-600 transition" title="ออกจากระบบ">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -801,12 +727,6 @@ ROOM = r"""
 
     <!-- Header Actions -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      <!-- Profile avatar toggle -->
-      <button onclick="openAvatarModal()" class="flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 px-2 py-1 rounded-full border border-sky-200 text-xs font-semibold transition" title="เปลี่ยนรูปโปรไฟล์ของคุณ">
-        <span class="avatar h-6 w-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-inner" data-name="{{ me }}" data-avatar="{{ my_avatar }}"></span>
-        <span class="hidden sm:inline">{{ me }}</span>
-      </button>
-
       <button id="soundToggle" onclick="toggleSound()" class="h-9 w-9 rounded-xl hover:bg-slate-100 text-slate-500 flex items-center justify-center transition" title="เปิด/ปิดเสียงแจ้งเตือน">
         <svg id="soundOnIcon" class="h-4.5 w-4.5 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
         <svg id="soundOffIcon" class="h-4.5 w-4.5 text-slate-400 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
@@ -824,7 +744,8 @@ ROOM = r"""
         <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
       </button>
 
-      <button id="membersBtn" class="lg:hidden h-9 w-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-600 transition" title="ดูสมาชิก">
+      <!-- Members Sidebar Button -->
+      <button id="membersBtn" class="h-9 w-9 rounded-xl bg-sky-50 hover:bg-sky-100 flex items-center justify-center text-sky-700 border border-sky-200 transition" title="ดูสมาชิกในห้อง">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.4-1.8M17 20H7m10 0v-2c0-.7-.1-1.3-.4-1.8M7 20H2v-2a3 3 0 015.4-1.8M7 20v-2c0-.7.1-1.3.4-1.8m0 0a5 5 0 019.2 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       </button>
     </div>
@@ -897,7 +818,7 @@ ROOM = r"""
       </form>
     </div>
 
-    <!-- Members Sidebar -->
+    <!-- Members Sidebar (Right Side Panel) -->
     <aside id="members" class="hidden lg:flex w-80 flex-col bg-white border-l border-sky-100 fixed lg:static inset-y-0 right-0 z-30 shadow-2xl lg:shadow-none">
       <div class="px-5 py-4 border-b border-sky-100 flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -1150,7 +1071,6 @@ function addMessage(m, isHistory) {
   if(!mine){
     const av = el('div', 'avatar h-9 w-9 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm');
     av.dataset.name = m.author;
-    if(m.avatar) av.dataset.avatar = m.avatar;
     paintAvatar(av);
     if(grouped) av.style.visibility = 'hidden';
     row.append(av);
@@ -1247,7 +1167,7 @@ function addMessage(m, isHistory) {
     } catch(e){}
   }
 
-  // Text message (if not redundant with file name)
+  // Text message
   if(m.body && m.msg_type !== 'location' && !(m.msg_type === 'file' && m.body === 'ไฟล์เอกสาร')) {
     if(m.msg_type === 'text' || (m.body && m.msg_type !== 'file')) {
       bubble.append(document.createTextNode(m.body));
@@ -1343,7 +1263,6 @@ function renderMembers(list){
     const left = el('div', 'flex items-center gap-2.5 min-w-0');
     const av = el('div', 'avatar relative h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0');
     av.dataset.name = m.name;
-    if(m.avatar) av.dataset.avatar = m.avatar;
     paintAvatar(av);
     av.append(el('span', 'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white'));
     
@@ -1586,7 +1505,15 @@ document.getElementById('copyBtn').addEventListener('click', async e => {
 });
 
 const members = document.getElementById('members');
-document.getElementById('membersBtn').addEventListener('click', () => { members.classList.remove('hidden'); members.classList.add('flex'); });
+document.getElementById('membersBtn').addEventListener('click', () => { 
+  if(members.classList.contains('hidden')) {
+    members.classList.remove('hidden'); 
+    members.classList.add('flex'); 
+  } else {
+    members.classList.add('hidden'); 
+    members.classList.remove('flex'); 
+  }
+});
 document.getElementById('closeMembers').addEventListener('click', () => { members.classList.add('hidden'); members.classList.remove('flex'); });
 
 document.addEventListener('visibilitychange', () => {
@@ -1603,21 +1530,7 @@ input.focus();
 
 AVATAR_JS = r"""
 function paintAvatar(el){
-  const customAvatar = el.dataset.avatar;
   const n = el.dataset.name || '?';
-  el.innerHTML = '';
-  if(customAvatar && customAvatar.startsWith('data:image')) {
-    const img = document.createElement('img');
-    img.src = customAvatar;
-    img.className = 'h-full w-full object-cover rounded-full';
-    el.style.background = 'transparent';
-    el.appendChild(img);
-    return;
-  } else if(customAvatar && customAvatar.length <= 4) {
-    el.style.background = '#e0f2fe';
-    el.textContent = customAvatar;
-    return;
-  }
   const colors = ['#0284c7', '#0ea5e9', '#0369a1', '#2563eb', '#3b82f6', '#0891b2', '#06b6d4', '#4f46e5', '#38bdf8', '#1d4ed8'];
   let h = 0; for(const c of n) h = (h*31 + c.codePointAt(0)) >>> 0;
   el.style.background = colors[h % colors.length];
@@ -1657,7 +1570,6 @@ def index():
     current_url = request.host_url.rstrip("/")
 
     me = session.get("name")
-    my_avatar = session.get("avatar", "")
     if not me:
         return page(LOGIN, title="เข้าสู่ระบบ · Chat Network", max_name=MAX_NAME,
                     net_ips=net_ips, port=port, current_url=current_url)
@@ -1680,22 +1592,9 @@ def index():
             "created_at": r["created_at"]
         })
 
-    return page(LOBBY, title="Chat Network — หน้าล็อบบี้", me=me, my_avatar=my_avatar,
+    return page(LOBBY, title="Chat Network — หน้าล็อบบี้", me=me,
                 all_rooms=all_rooms, net_ips=net_ips, port=port,
                 current_url=current_url, max_room=MAX_ROOM_NAME, max_pass=MAX_PASSWORD)
-
-
-@app.post("/set-avatar")
-def set_avatar():
-    me = session.get("name")
-    if not me:
-        return jsonify(error="unauthorized"), 401
-    avatar = (request.get_json(silent=True) or {}).get("avatar", "").strip()
-    session["avatar"] = avatar
-    db = get_db()
-    db.execute("UPDATE presence SET avatar=? WHERE name=?", (avatar, me))
-    db.commit()
-    return jsonify(ok=True)
 
 
 @app.post("/login")
@@ -1787,9 +1686,8 @@ def room(code):
 
     remember_room(code)
     is_admin = (r["created_by"] == me)
-    my_avatar = session.get("avatar", "")
     room_url = f"{request.host_url.rstrip('/')}/room/{code}"
-    return page(ROOM, title=f"{r['name']} · #{code}", me=me, my_avatar=my_avatar, room=r, is_admin=is_admin,
+    return page(ROOM, title=f"{r['name']} · #{code}", me=me, room=r, is_admin=is_admin,
                 room_url=room_url, max_msg=MAX_MSG)
 
 
@@ -1962,15 +1860,14 @@ def api_messages(code):
         body = str(payload.get("body", "")).strip()[:MAX_MSG]
         msg_type = payload.get("msg_type", "text")
         file_data = payload.get("file_data")
-        my_avatar = session.get("avatar", "")
 
         if not body and not file_data:
             return jsonify(error="empty"), 400
 
         db.execute("""
-            INSERT INTO messages (room_code, author, body, msg_type, file_data, avatar, created_at)
-            VALUES (?,?,?,?,?,?,?)
-        """, (code, me, body, msg_type, file_data, my_avatar, now))
+            INSERT INTO messages (room_code, author, body, msg_type, file_data, created_at)
+            VALUES (?,?,?,?,?,?)
+        """, (code, me, body, msg_type, file_data, now))
         db.commit()
         return jsonify(ok=True)
 
@@ -1980,11 +1877,10 @@ def api_messages(code):
     except ValueError:
         after = 0
 
-    my_avatar = session.get("avatar", "")
     db.execute("""
-        INSERT INTO presence (room_code, name, avatar, last_seen) VALUES (?,?,?,?)
-        ON CONFLICT(room_code, name) DO UPDATE SET last_seen=excluded.last_seen, avatar=excluded.avatar
-    """, (code, me, my_avatar, now))
+        INSERT INTO presence (room_code, name, last_seen) VALUES (?,?,?)
+        ON CONFLICT(room_code, name) DO UPDATE SET last_seen=excluded.last_seen
+    """, (code, me, now))
     db.commit()
 
     if after == 0:
@@ -1999,7 +1895,7 @@ def api_messages(code):
         """, (code, after)).fetchall()
 
     online_rows = db.execute("""
-        SELECT name, avatar FROM presence WHERE room_code=? AND last_seen>? ORDER BY name
+        SELECT name FROM presence WHERE room_code=? AND last_seen>? ORDER BY name
     """, (code, now - ONLINE_WINDOW)).fetchall()
 
     muted_remaining = 0
@@ -2013,10 +1909,9 @@ def api_messages(code):
             "body": row["body"],
             "msg_type": row["msg_type"] if "msg_type" in row.keys() else "text",
             "file_data": row["file_data"] if "file_data" in row.keys() else None,
-            "avatar": row["avatar"] if "avatar" in row.keys() else "",
             "created_at": row["created_at"]
         } for row in rows],
-        online_users=[{"name": r["name"], "avatar": r["avatar"]} for r in online_rows],
+        online_users=[{"name": r["name"]} for r in online_rows],
         muted_remaining=muted_remaining
     )
 
