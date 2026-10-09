@@ -488,7 +488,7 @@ LOBBY = r"""
               <label class="block text-xs font-semibold text-slate-600 mb-1.5">ไอคอนประจำห้อง</label>
               <div class="flex items-center gap-2 overflow-x-auto pb-1 scroll-thin">
                 <input type="hidden" name="room_icon" id="selectedRoomIcon" value="💬">
-                {% for ic in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟','🔥','🎉'] %}
+                {% for ic in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟','🔥','🎉','📊','🎧','🛠️','⚽','🍕','📚','💰','💡'] %}
                 <button type="button" onclick="selectRoomIcon(this, '{{ ic }}')"
                   class="room-icon-btn h-10 w-10 rounded-xl bg-white border border-sky-100 text-lg flex items-center justify-center transition shrink-0 {{ 'ring-2 ring-sky-500 bg-sky-50 font-bold' if loop.first else '' }}">
                   {{ ic }}
@@ -878,9 +878,9 @@ ROOM = r"""
 
     <div class="border-t border-slate-100 pt-3">
       <p class="text-[11px] font-semibold text-slate-400 mb-2">หรือเลือกไอคอนเร็ว:</p>
-      <div class="grid grid-cols-5 gap-2 text-xl">
-        {% for icon in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟','🔥','🎉','📊','🎧','🛠️'] %}
-        <button onclick="saveRoomIcon('{{ icon }}')" class="h-10 w-10 rounded-xl bg-slate-50 hover:bg-sky-100 border border-slate-100 flex items-center justify-center transition active:scale-95">
+      <div class="grid grid-cols-5 gap-2 text-xl max-h-48 overflow-y-auto scroll-thin p-1">
+        {% for icon in ['💬','🏢','💻','🎮','☕','🚀','🎯','📦','👥','🌟','🔥','🎉','📊','🎧','🛠️','⚽','🍕','📚','💰','💡'] %}
+        <button onclick="saveRoomIcon('{{ icon }}')" class="h-10 w-10 rounded-xl bg-slate-50 hover:bg-sky-100 border border-slate-100 flex items-center justify-center transition active:scale-95 shadow-sm">
           {{ icon }}
         </button>
         {% endfor %}
