@@ -940,6 +940,7 @@ const API = "{{ url_for('api_messages', code=room.code) }}";
 const MOD_API = "{{ url_for('api_moderate', code=room.code) }}";
 const ICON_API = "{{ url_for('api_set_room_icon', code=room.code) }}";
 let lastId = 0, lastAuthor = null, lastTime = 0, lastDay = null, polling = false;
+let isSending = false;
 let soundEnabled = true;
 let pendingAttachment = null; // { type: 'image'|'file', data: '...', name: '...', size: '...' }
 let currentTargetUser = '';
@@ -1446,11 +1447,17 @@ document.addEventListener('paste', e => {
 });
 
 async function send(){
+  if(isSending) return;
   const body = input.value.trim();
   const attach = pendingAttachment;
   if(!body && !attach) return;
 
+  isSending = true;
   sendBtn.disabled = true;
+  input.value = '';
+  cancelAttachment();
+  autosize();
+
   try {
     let payload = { body: body, msg_type: 'text', file_data: null };
 
@@ -1475,14 +1482,21 @@ async function send(){
       body: JSON.stringify(payload)
     });
     if(r.ok){
-      input.value = ''; cancelAttachment(); autosize(); await poll();
+      await poll();
       box.scrollTop = box.scrollHeight;
     } else if(r.status === 403) {
       const err = await r.json();
       alert(err.error || 'คุณไม่สามารถส่งข้อความได้');
       await poll();
+    } else {
+      input.value = body;
+      autosize();
     }
+  } catch(e){
+    input.value = body;
+    autosize();
   } finally {
+    isSending = false;
     sendBtn.disabled = false;
     input.focus();
   }
@@ -1491,9 +1505,15 @@ async function send(){
 function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; }
 input.addEventListener('input', autosize);
 input.addEventListener('keydown', e => {
-  if(e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); }
+  if(e.key === 'Enter' && !e.shiftKey && !e.isComposing){
+    e.preventDefault();
+    send();
+  }
 });
-document.getElementById('composer').addEventListener('submit', e => { e.preventDefault(); send(); });
+document.getElementById('composer').addEventListener('submit', e => {
+  e.preventDefault();
+  send();
+});
 
 document.getElementById('copyBtn').addEventListener('click', async e => {
   const btn = e.currentTarget;
