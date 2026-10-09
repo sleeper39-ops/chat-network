@@ -1047,7 +1047,7 @@ function getFileIconAndColor(filename) {
   return { icon: '📁', color: 'bg-sky-100 text-sky-700 border-sky-200' };
 }
 
-function addMessage(m, isHistory) {
+function addMessage(m, isInitial) {
   const day = fmtDay(m.created_at);
   if(day !== lastDay){
     const d = el('div', 'flex items-center gap-3 my-4 text-xs text-sky-700/60 font-medium');
@@ -1304,7 +1304,7 @@ async function poll(){
       const stick = nearBottom() || lastId === 0;
       const isInitial = lastId === 0;
       data.messages.forEach(m => {
-        addMessage(m, isHistory);
+        addMessage(m, isInitial);
         lastId = Math.max(lastId, m.id);
       });
       if(data.messages.length && stick) { box.scrollTop = box.scrollHeight; }
